@@ -55,19 +55,20 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private MediaProjectionManager mMediaProjectionManager;
     private ScreenRecorder mRecorder;
     private Button mButton;
-    private  int currentapiVersion=android.os.Build.VERSION.SDK_INT;
+    private int currentapiVersion = android.os.Build.VERSION.SDK_INT;
     private Button stopButton;
     private Thread thread;
-    public static  boolean isrun=true;
+    public static boolean isrun = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mButton = (Button) findViewById(R.id.button);
-        stopButton= (Button) findViewById(R.id.button1);
+        stopButton = (Button) findViewById(R.id.stopButton);
         mButton.setOnClickListener(this);
-        if(currentapiVersion>20){
+        stopButton.setOnClickListener(this);
+        if (currentapiVersion > 20) {
             mMediaProjectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
         }
 
@@ -76,7 +77,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(currentapiVersion>20){
+        if (currentapiVersion > 20) {
             MediaProjection mediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, data);
             if (mediaProjection == null) {
                 Log.e("@@", "media projection is null");
@@ -87,83 +88,82 @@ public class MainActivity extends Activity implements View.OnClickListener {
             final int height = 1440;
             File file = new File(Environment.getExternalStorageDirectory(),
                     "record-" + width + "x" + height + "-" + System.currentTimeMillis() + ".mp4");
+            String path=new File(Environment.getExternalStorageDirectory(), "abcabc.mp4").getPath();
+            Log.i("MainActivity path",path);
             final int bitrate = 6000000;
-            mRecorder = new ScreenRecorder(width, height, bitrate, 1, mediaProjection, file.getAbsolutePath());
+            mRecorder = new ScreenRecorder(width, height, bitrate, 1, mediaProjection,path);
             mRecorder.start();
-            mButton.setText("Stop Recorder");
             Toast.makeText(this, "Screen recorder is running...", Toast.LENGTH_SHORT).show();
             moveTaskToBack(true);
         }
 
     }
+
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void onClick(View v) {
-        if(currentapiVersion>20){
 
-            if (mRecorder != null) {
-                mRecorder.quit();
-                mRecorder = null;
-                mButton.setText("Restart recorder");
-            } else {
-                Intent captureIntent = mMediaProjectionManager.createScreenCaptureIntent();
-                startActivityForResult(captureIntent, REQUEST_CODE);
-            }
-        }
 
-        else {
-            if(v.getId()==R.id.button){
-                try {
+        if (v.getId() == R.id.button) {
+            try {
+
+                if (currentapiVersion > 20) {
+
+                    Intent captureIntent = mMediaProjectionManager.createScreenCaptureIntent();
+                    startActivityForResult(captureIntent, REQUEST_CODE);
+
+                } else {
+
                     thread = new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            String cmd = "screenrecord --time-limit 300  /sdcard/360/vvvvvvvvvvv.mp4";
+                            String cmd = "screenrecord " + new File(Environment.getExternalStorageDirectory(), "33333.mp4").getPath();
                             execShellCom(cmd);
                         }
                     });
                     thread.start();
+
                 }
-                catch (Exception e){
-                    e.printStackTrace();
-                }
-                Toast.makeText(v.getContext(),"开始录屏",Toast.LENGTH_LONG).show();
+
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+            Toast.makeText(v.getContext(), "开始录屏", Toast.LENGTH_LONG).show();
+        }
 
 
-            else if(v.getId()==R.id.button1){
-                thread.stop();
-//                if(thread.isAlive()&&thread!=null){
-                Toast.makeText(v.getContext(),"结束录屏",Toast.LENGTH_LONG).show();
-//                    try {
-//                        Thread.sleep(30000000);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                    thread.interrupt();
-//
-//                }
+
+        else if (v.getId() == R.id.stopButton) {
+
+            if (mRecorder != null) {
+                mRecorder.quit();
+                mRecorder = null;
+            }else {
+                stop();
             }
-
+            Toast.makeText(v.getContext(), "结束录屏", Toast.LENGTH_LONG).show();
         }
 
 
     }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if(mRecorder != null){
+        if (mRecorder != null) {
             mRecorder.quit();
             mRecorder = null;
         }
     }
 
-    private  void execShellCom(String cmd){
-        try{
+    private void execShellCom(String cmd) {
+        try {
             //权限设置
             Process p = Runtime.getRuntime().exec("su");
             //获取输出流
             OutputStream outputStream = p.getOutputStream();
-            DataOutputStream dataOutputStream=new DataOutputStream(outputStream);
+            DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
             //将命令写入
             dataOutputStream.writeBytes(cmd);
             //提交命令
@@ -171,14 +171,21 @@ public class MainActivity extends Activity implements View.OnClickListener {
             //关闭流操作
             dataOutputStream.close();
             outputStream.close();
-        }
-        catch(Throwable t)
-        {
+        } catch (Throwable t) {
             t.printStackTrace();
         }
 
     }
 
+
+    public synchronized void stop() {
+        if (thread == null) {
+            return;
+        }
+        Thread moribund = thread;
+        thread = null;
+        moribund.interrupt();
+    }
 
 
 }

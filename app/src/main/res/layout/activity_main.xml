@@ -8,12 +8,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/button"
-        android:text="Start Recorder" />
+        android:text="开始" />
     <Button
-        android:text="停止"
-        android:id="@+id/button1"
+        android:id="@+id/stopButton"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="结束" />
     <SurfaceView
         android:id="@+id/surface"
         android:visibility="gone"
